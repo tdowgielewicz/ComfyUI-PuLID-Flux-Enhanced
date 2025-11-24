@@ -147,7 +147,8 @@ def forward_orig(
                         condition_start, condition_end).all()
                     
                     if condition:
-                        img = img + node_data['weight'] * self.pulid_ca[ca_idx].to(device)(node_data['embedding'], img)
+                        pulid_out = self.pulid_ca[ca_idx].to(device)(node_data['embedding'], img)
+                        img = img + node_data['weight'] * pulid_out.to(img.dtype)
                 ca_idx += 1
 
     img = torch.cat((txt, img), 1)
@@ -191,7 +192,8 @@ def forward_orig(
                     condition = torch.logical_and(condition_start, condition_end).all()
 
                     if condition:
-                        real_img = real_img + node_data['weight'] * self.pulid_ca[ca_idx].to(device)(node_data['embedding'], real_img)
+                        pulid_out = self.pulid_ca[ca_idx].to(device)(node_data['embedding'], real_img)
+                        real_img = real_img + node_data['weight'] * pulid_out.to(real_img.dtype)
                 ca_idx += 1
             img = torch.cat((txt, real_img), 1)
 
