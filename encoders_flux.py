@@ -49,8 +49,17 @@ class PerceiverAttentionCA(nn.Module):
             latent (torch.Tensor): latent features
                 shape (b, n2, D)
         """
-        x = self.norm1(x)
-        latents = self.norm2(latents)
+        # Fix for mixed precision (BFloat16 input vs Float16 weights)
+        if x.dtype != self.norm1.weight.dtype:
+            x = self.norm1(x.to(self.norm1.weight.dtype)).to(x.dtype)
+        else:
+            x = self.norm1(x)
+
+        if latents.dtype != self.norm2.weight.dtype:
+            orig_dtype = latents.dtype
+            latents = self.norm2(latents.to(self.norm2.weight.dtype)).to(orig_dtype)
+        else:
+            latents = self.norm2(latents)
 
         b, seq_len, _ = latents.shape
 
@@ -95,8 +104,17 @@ class PerceiverAttention(nn.Module):
             latent (torch.Tensor): latent features
                 shape (b, n2, D)
         """
-        x = self.norm1(x)
-        latents = self.norm2(latents)
+        # Fix for mixed precision (BFloat16 input vs Float16 weights)
+        if x.dtype != self.norm1.weight.dtype:
+            x = self.norm1(x.to(self.norm1.weight.dtype)).to(x.dtype)
+        else:
+            x = self.norm1(x)
+
+        if latents.dtype != self.norm2.weight.dtype:
+            orig_dtype = latents.dtype
+            latents = self.norm2(latents.to(self.norm2.weight.dtype)).to(orig_dtype)
+        else:
+            latents = self.norm2(latents)
 
         b, seq_len, _ = latents.shape
 
