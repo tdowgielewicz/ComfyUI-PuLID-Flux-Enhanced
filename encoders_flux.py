@@ -50,16 +50,18 @@ class PerceiverAttentionCA(nn.Module):
                 shape (b, n2, D)
         """
         # Fix for mixed precision (BFloat16 input vs Float16 weights)
-        if x.dtype != self.norm1.weight.dtype:
-            x = self.norm1(x.to(self.norm1.weight.dtype)).to(x.dtype)
-        else:
-            x = self.norm1(x)
-
-        if latents.dtype != self.norm2.weight.dtype:
-            orig_dtype = latents.dtype
-            latents = self.norm2(latents.to(self.norm2.weight.dtype)).to(orig_dtype)
-        else:
-            latents = self.norm2(latents)
+        # We cast inputs to the layer's dtype (Float16), run comp, then cast output back.
+        target_dtype = self.norm1.weight.dtype
+        output_dtype = latents.dtype # Flux latents (img) are BFloat16
+        
+        if x.dtype != target_dtype:
+            x = x.to(target_dtype)
+            
+        if latents.dtype != target_dtype:
+            latents = latents.to(target_dtype)
+            
+        x = self.norm1(x)
+        latents = self.norm2(latents)
 
         b, seq_len, _ = latents.shape
 
@@ -78,7 +80,8 @@ class PerceiverAttentionCA(nn.Module):
 
         out = out.permute(0, 2, 1, 3).reshape(b, seq_len, -1)
 
-        return self.to_out(out)
+        # Cast back to original dtype (BFloat16)
+        return self.to_out(out).to(output_dtype)
 
 
 class PerceiverAttention(nn.Module):
